@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #playdiv{
+                display: none;
+            }
+            #waitdiv{
+                display: none;
+            }
+            #judgechoosenoundiv{
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="startdiv">
+            <p>Username:</p>
+            <input id="usernameinput">
+            <hr>
+            <p>Adjectives:</p>
+            <textarea id="adjectivesinput"></textarea>
+            <hr>
+            <p>Nouns:</p>
+            <textarea id="nounsinput"></textarea>
+            <button id="joingamebutton">Join Game</button>
+        </div>
+        <div id="playdiv">
+            <p>Judge:</p>
+            <p id="currentjudge"></p>
+            <p>Adjective:</p>
+            <p id="currentadjective"></p>
+            <div id="choosenoundiv">
+                <p>Your nouns:</p>
+                <select id="choosenoun">
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                    <option></option>
+                </select>
+                <button id="submitnounbutton">Submit noun</button>
+            </div>
+            <div id="judgechoosenoundiv">
+                <p>Choose the best submitted noun:</p>
+                <select id="judgechoosenoun"></select>
+                <button id="judgesubmitnounbutton">Submit winner</button>
+            </div>
+            <p id="waittext"></p>
+        </div>
+        <script>
+
+let startDiv = document.getElementById("startdiv");
+let usernameInput = document.getElementById("usernameinput");
+let adjectivesInput = document.getElementById("adjectivesinput");
+let nounsInput = document.getElementById("nounsinput");
+let joinGameButton = document.getElementById("joingamebutton");
+let playDiv = document.getElementById("playdiv");
+let currentJudgeGUI = document.getElementById("currentjudge");
+let currentAdjectiveGUI = document.getElementById("currentadjective");
+let chooseNounDiv = document.getElementById("choosenoundiv");
+let chooseNounGUI = document.getElementById("choosenoun");
+let submitNounButton = document.getElementById("submitnounbutton");
+let judgeChooseNounDiv = document.getElementById("judgechoosenoundiv");
+let judgeChooseNounGUI = document.getElementById("judgechoosenoun");
+let judgeSubmitNounButton = document.getElementById("judgesubmitnounbutton");
+let waitText = document.getElementById("waittext");
+let username;
+let id;
+let reqsFromServer = [];
+let clientNouns = [];
+let currentAdjective;
+let currentJudge;
+
+sendPOSTRequest("/getid", "1234").then((response) => response.json()).then((json) => id = json);
+
+function joinGame() {
+    username = usernameInput.value;
+    sendPOSTRequest("/joingame", {id: id, username: username, adjectives: adjectivesInput.value.split("\n"), nouns: nounsInput.value.split("\n")});
+    startDiv.style.display = "none";
+    playDiv.style.display = "block";
+}
+joinGameButton.addEventListener("click", joinGame);
+
+function submitNoun(){
+    sendPOSTRequest("/submitnoun", {id: id, noun: chooseNounGUI.value});
+}
+submitNounButton.addEventListener("click", submitNoun);
+
+function judgeSubmitNoun(){
+    sendPOSTRequest("/judgesubmitnoun", {id: judgeChooseNounGUI.options[judgeChooseNounGUI.selectedIndex].id+0, noun: judgeChooseNounGUI.value});
+}
+judgeSubmitNounButton.addEventListener("click", judgeSubmitNoun);
+
+async function pickupRequestsLoop() {
+    if (id != undefined) {
+        await sendPOSTRequest("/pickuprequests", id).then((response) => response.json()).then((json) => reqsFromServer.push(...json));
+    }
+    while (reqsFromServer.length != 0) {
+        let req = reqsFromServer.shift();
+        if (req.reqtype == "/setclientnouns") {
+            clientNouns = req.body;
+            for (let i=0; i<clientNouns.length; i++) {
+                chooseNounGUI.children[i].innerText = clientNouns[i];
+            }
+        } else if (req.reqtype == "/setadjective") {
+            currentAdjective = req.body;
+            currentAdjectiveGUI.innerText = currentAdjective;
+        } else if (req.reqtype == "/setjudge") {
+            chooseNounDiv.style.display = "block";
+            judgeChooseNounDiv.style.display = "none";
+            waitText.innerText = "";
+            currentJudge = req.body;
+            currentJudgeGUI.innerText = currentJudge.username;
+            if (currentJudge.id == id) {
+                chooseNounDiv.style.display = "none";
+                waitText.innerText = "Waiting for noun submissions...";
+            }
+        } else if (req.reqtype == "/startjudging") {
+            if (currentJudge.id == id) {
+                for (let i=0; i<judgeChooseNounGUI.children.length; i++) {
+                    judgeChooseNounGUI.removeChild(judgeChooseNounGUI.children[i]);
+                }
+                for (let i=0; i<req.body.length; i++) {
+                    let option = document.createElement("option");
+                    option.innerText = req.body[i].noun;
+                    option.id = req.body[i].id;
+                    judgeChooseNounGUI.appendChild(option);
+                }
+                waitText.innerText = "";
+                judgeChooseNounDiv.style.display = "block";
+            } else {
+                chooseNounDiv.style.display = "none";
+                waitText.innerText = "Waiting for the judge's decision...";
+            }
+        }
+    }
+    setTimeout(pickupRequestsLoop, 200);
+}
+pickupRequestsLoop();
+
+async function sendPOSTRequest(url, data) {
+    let a = JSON.stringify(data);
+    return fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: a
+    });
+}
+
+        </script>
+    </body>
+</html>
