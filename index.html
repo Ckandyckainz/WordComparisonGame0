@@ -17,6 +17,7 @@
         </style>
     </head>
     <body>
+        <p id="scoreboardtext"></p>
         <div id="startdiv">
             <p>Username:</p>
             <input id="usernameinput">
@@ -55,9 +56,11 @@
             <p>Winner:</p>
             <p id="roundwinnernoun"></p>
             <p id="roundwinnerusername"></p>
+            <p id="allnounentries"></p>
         </div>
         <script>
 
+let scoreBoardText = document.getElementById("scoreboardtext");
 let startDiv = document.getElementById("startdiv");
 let usernameInput = document.getElementById("usernameinput");
 let adjectivesInput = document.getElementById("adjectivesinput");
@@ -76,6 +79,7 @@ let waitText = document.getElementById("waittext");
 let showRoundWinnerDiv = document.getElementById("showroundwinnerdiv");
 let roundWinnerNounText = document.getElementById("roundwinnernoun");
 let roundWinnerUsernameText = document.getElementById("roundwinnerusername");
+let allNounEntriesText = document.getElementById("allnounentries");
 let username;
 let id;
 let reqsFromServer = [];
@@ -147,9 +151,12 @@ async function pickupRequestsLoop() {
             }
         } else if (req.reqtype == "/showroundwinner") {
             playDiv.style.display = "none";
-            roundWinnerNounText.innerText = req.body.noun;
-            roundWinnerUsernameText.innerText = req.body.username;
+            roundWinnerNounText.innerText = req.body.winner.noun;
+            roundWinnerUsernameText.innerText = req.body.winner.username;
+            allNounEntriesText.innerText = req.body.allNounEntries;
             showRoundWinnerDiv.style.display = "block";
+        } else if (req.reqtype == "/setscoreboard") {
+            scoreBoardText.innerText = req.body;
         }
     }
     setTimeout(pickupRequestsLoop, 200);

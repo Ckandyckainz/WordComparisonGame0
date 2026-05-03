@@ -15,6 +15,8 @@ let currentPlayerIDs = [];
 let currentAdjective;
 let currentJudgeID;
 let roundWinner;
+let scoreBoard = [];
+let scoreBoardText = "";
 
 http.createServer((req, res)=>{
   let body = [];
@@ -56,6 +58,7 @@ http.createServer((req, res)=>{
       adjectives.push(...client.adjectives);
       nouns.push(...client.nouns);
       usernames[client.id] = client.username;
+      scoreBoard[client.id] = 0;
       let currentClientNouns = [];
       for (let i=0; i<5; i++) {
         dealNoun(currentClientNouns);
@@ -69,6 +72,7 @@ http.createServer((req, res)=>{
       if (gameState == "waiting for players" && currentNumberOfPlayers >= 1) {
         startRound();
       }
+      sendScoreBoard(client.id);
       res.end("");
     } else if (req.url == "/submitnoun") {
       let client = JSON.parse(body);
@@ -101,7 +105,11 @@ function startRound(){
   console.log("starting round...");
   gameState = "noun selection";
   currentAdjective = adjectives[Math.floor(Math.random()*adjectives.length)];
-  currentJudgeID = currentPlayerIDs[Math.floor(Math.random()*currentPlayerIDs.length)];
+  if (roundWinner != undefined) {
+    currentJudgeID = roundWinner.id;
+  } else {
+    currentJudgeID = currentPlayerIDs[Math.floor(Math.random()*currentPlayerIDs.length)];
+  }
   for (let i=0; i<submittedNouns.length; i++) {
     nouns.push(submittedNouns[i].noun);
   }
@@ -128,11 +136,30 @@ function startJudging(){
 
 function showRoundWinner(roundWinner){
   console.log("Showing winner...");
+  scoreBoard[roundWinner.id] ++;
+  let allNounEntries = "All Noun Entries:";
+  for (let i=0; i<submittedNouns.length; i++) {
+    let item = submittedNouns[i];
+    allNounEntries += "\n"+usernames[item.id]+": "+item.noun;
+  }
+  scoreBoardText = "Score Board:"
   for (let i=0; i<currentPlayerIDs.length; i++) {
     let id = currentPlayerIDs[i];
-    requestsForClients[id].push({reqtype: "/showroundwinner", body: {noun: roundWinner.noun, username: usernames[roundWinner.id]}});
+    scoreBoardText += "\n"+usernames[id]+": "+scoreBoard[id];
+    requestsForClients[id].push({reqtype: "/showroundwinner", body: {
+      winner: {noun: roundWinner.noun, username: usernames[roundWinner.id]},
+      allNounEntries: allNounEntries
+    }});
+  }
+  for (let i=0; i<currentPlayerIDs.length; i++) {
+    let id = currentPlayerIDs[i];
+    sendScoreBoard(id);
   }
   setTimeout(startRound, 10000);
+}
+
+function sendScoreBoard(clientID){
+  requestsForClients[clientID].push({reqtype: "/setscoreboard", body: scoreBoardText});
 }
 
 function connectTestLoop(){
