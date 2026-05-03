@@ -69,16 +69,25 @@ http.createServer((req, res)=>{
       if (gameState == "waiting for players" && currentNumberOfPlayers >= 1) {
         startRound();
       }
+      res.end("");
     } else if (req.url == "/submitnoun") {
       let client = JSON.parse(body);
       submittedNouns.push(client);
+      for (let i=0; i<clientNouns[client.id].length; i++) {
+        if (clientNouns[client.id][i] == client.noun) {
+          clientNouns[client.id].splice(i, 1);
+          break;
+        }
+      }
       if (submittedNouns.length == currentPlayerIDs.length-1) {
         startJudging();
       }
+      res.end("");
     } else if (req.url == "/judgesubmitnoun") {
       roundWinner = JSON.parse(body);
       console.log(roundWinner);
       startRound();
+      res.end("");
     }
   });
 }).listen(8080);
@@ -94,6 +103,9 @@ function startRound(){
   gameState = "noun selection";
   currentAdjective = adjectives[Math.floor(Math.random()*adjectives.length)];
   currentJudgeID = currentPlayerIDs[Math.floor(Math.random()*currentPlayerIDs.length)];
+  for (let i=0; i<submittedNouns.length; i++) {
+    nouns.push(submittedNouns[i].noun);
+  }
   submittedNouns = [];
   for (let i=0; i<currentPlayerIDs.length; i++) {
     let id = currentPlayerIDs[i];

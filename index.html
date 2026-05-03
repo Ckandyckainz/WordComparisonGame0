@@ -84,6 +84,8 @@ joinGameButton.addEventListener("click", joinGame);
 
 function submitNoun(){
     sendPOSTRequest("/submitnoun", {id: id, noun: chooseNounGUI.value});
+    chooseNounDiv.style.display = "none";
+    waitText.innerText = "Waiting for the judge's decision...";
 }
 submitNounButton.addEventListener("click", submitNoun);
 
@@ -118,8 +120,8 @@ async function pickupRequestsLoop() {
             }
         } else if (req.reqtype == "/startjudging") {
             if (currentJudge.id == id) {
-                for (let i=0; i<judgeChooseNounGUI.children.length; i++) {
-                    judgeChooseNounGUI.removeChild(judgeChooseNounGUI.children[i]);
+                while (judgeChooseNounGUI.children.length > 0) {
+                    judgeChooseNounGUI.removeChild(judgeChooseNounGUI.children[0]);
                 }
                 for (let i=0; i<req.body.length; i++) {
                     let option = document.createElement("option");
@@ -129,9 +131,6 @@ async function pickupRequestsLoop() {
                 }
                 waitText.innerText = "";
                 judgeChooseNounDiv.style.display = "block";
-            } else {
-                chooseNounDiv.style.display = "none";
-                waitText.innerText = "Waiting for the judge's decision...";
             }
         }
     }
