@@ -11,6 +11,9 @@
             #judgechoosenoundiv{
                 display: none;
             }
+            #showroundwinnerdiv{
+                display: none;
+            }
         </style>
     </head>
     <body>
@@ -48,6 +51,11 @@
             </div>
             <p id="waittext"></p>
         </div>
+        <div id="showroundwinnerdiv">
+            <p>Winner:</p>
+            <p id="roundwinnernoun"></p>
+            <p id="roundwinnerusername"></p>
+        </div>
         <script>
 
 let startDiv = document.getElementById("startdiv");
@@ -65,6 +73,9 @@ let judgeChooseNounDiv = document.getElementById("judgechoosenoundiv");
 let judgeChooseNounGUI = document.getElementById("judgechoosenoun");
 let judgeSubmitNounButton = document.getElementById("judgesubmitnounbutton");
 let waitText = document.getElementById("waittext");
+let showRoundWinnerDiv = document.getElementById("showroundwinnerdiv");
+let roundWinnerNounText = document.getElementById("roundwinnernoun");
+let roundWinnerUsernameText = document.getElementById("roundwinnerusername");
 let username;
 let id;
 let reqsFromServer = [];
@@ -90,7 +101,7 @@ function submitNoun(){
 submitNounButton.addEventListener("click", submitNoun);
 
 function judgeSubmitNoun(){
-    sendPOSTRequest("/judgesubmitnoun", {id: judgeChooseNounGUI.options[judgeChooseNounGUI.selectedIndex].id+0, noun: judgeChooseNounGUI.value});
+    sendPOSTRequest("/judgesubmitnoun", {id: Number(judgeChooseNounGUI.options[judgeChooseNounGUI.selectedIndex].id), noun: judgeChooseNounGUI.value});
 }
 judgeSubmitNounButton.addEventListener("click", judgeSubmitNoun);
 
@@ -109,6 +120,8 @@ async function pickupRequestsLoop() {
             currentAdjective = req.body;
             currentAdjectiveGUI.innerText = currentAdjective;
         } else if (req.reqtype == "/setjudge") {
+            showRoundWinnerDiv.style.display = "none";
+            playDiv.style.display = "block";
             chooseNounDiv.style.display = "block";
             judgeChooseNounDiv.style.display = "none";
             waitText.innerText = "";
@@ -132,6 +145,11 @@ async function pickupRequestsLoop() {
                 waitText.innerText = "";
                 judgeChooseNounDiv.style.display = "block";
             }
+        } else if (req.reqtype == "/showroundwinner") {
+            playDiv.style.display = "none";
+            roundWinnerNounText.innerText = req.body.noun;
+            roundWinnerUsernameText.innerText = req.body.username;
+            showRoundWinnerDiv.style.display = "block";
         }
     }
     setTimeout(pickupRequestsLoop, 200);

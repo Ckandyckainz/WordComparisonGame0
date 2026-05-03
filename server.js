@@ -85,8 +85,7 @@ http.createServer((req, res)=>{
       res.end("");
     } else if (req.url == "/judgesubmitnoun") {
       roundWinner = JSON.parse(body);
-      console.log(roundWinner);
-      startRound();
+      showRoundWinner(roundWinner);
       res.end("");
     }
   });
@@ -125,6 +124,15 @@ function startJudging(){
     let id = currentPlayerIDs[i];
     requestsForClients[id].push({reqtype: "/startjudging", body: submittedNouns});
   }
+}
+
+function showRoundWinner(roundWinner){
+  console.log("Showing winner...");
+  for (let i=0; i<currentPlayerIDs.length; i++) {
+    let id = currentPlayerIDs[i];
+    requestsForClients[id].push({reqtype: "/showroundwinner", body: {noun: roundWinner.noun, username: usernames[roundWinner.id]}});
+  }
+  setTimeout(startRound, 10000);
 }
 
 function connectTestLoop(){
