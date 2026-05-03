@@ -60,7 +60,7 @@ http.createServer((req, res)=>{
       usernames[client.id] = client.username;
       scoreBoard[client.id] = 0;
       let currentClientNouns = [];
-      for (let i=0; i<5; i++) {
+      for (let i=0; i<7; i++) {
         dealNoun(currentClientNouns);
       }
       clientNouns[client.id] = currentClientNouns;
@@ -116,7 +116,7 @@ function startRound(){
   submittedNouns = [];
   for (let i=0; i<currentPlayerIDs.length; i++) {
     let id = currentPlayerIDs[i];
-    if (clientNouns[id].length == 4) {
+    if (clientNouns[id].length == 6) {
       dealNoun(clientNouns[id]);
       requestsForClients[id].push({reqtype: "/setclientnouns", body: clientNouns[id]});
     }
